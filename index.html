@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Викторина: Средневековая философия</title>
+<style>
+body{margin:0;font-family:Arial,sans-serif;background:#0f1724;color:#e6eef6;padding:20px;min-height:100vh;}
+.watermark{
+  position:fixed;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%) rotate(-30deg);
+  font-size:128px;font-weight:900;opacity:0.12;
+  white-space:nowrap;letter-spacing:8px;pointer-events:none;user-select:none;
+  background:linear-gradient(90deg, rgba(124,58,237,0.9), rgba(34,211,238,0.9));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  z-index:0;
+}
+.wrap{max-width:980px;margin:auto;position:relative;z-index:1;}
+header{margin-bottom:18px;}
+h1{margin:0;font-size:22px;color:#7c3aed;}
+p.lead{margin:4px 0 12px;color:#9aa4b2;}
+.card{background:rgba(255,255,255,0.03);padding:18px;border-radius:12px;box-shadow:0 6px 18px rgba(2,6,23,0.6);}
+input{padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:#e6eef6;margin-right:8px;}
+button{background:#7c3aed;color:#fff;padding:10px 14px;border-radius:10px;border:0;cursor:pointer;font-weight:600;margin-right:8px;}
+button.secondary{background:transparent;border:1px solid rgba(255,255,255,0.06);}
+.quiz-area{margin-top:14px;}
+.question{padding:14px;border-radius:10px;margin-bottom:12px;background:rgba(255,255,255,0.02);}
+.q-title{font-weight:700;margin-bottom:8px;}
+.options{display:flex;flex-direction:column;gap:8px;}
+.option{padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.03);cursor:pointer;}
+.option.selected{outline:2px solid rgba(124,58,237,0.25);background:rgba(124,58,237,0.06);}
+footer{margin-top:12px;display:flex;justify-content:flex-end;align-items:center;gap:12px;}
+.results-table{width:100%;border-collapse:collapse;margin-top:12px;color:#e6eef6;}
+.results-table th,.results-table td{padding:8px;border-bottom:1px solid rgba(255,255,255,0.03);text-align:left;}
+.answers-panel{display:none;margin-top:12px;}
+.end-fun{margin-top:16px;text-align:center;padding:14px;border-radius:10px;background:rgba(255,255,255,0.01);}
+canvas{position:fixed;left:0;top:0;pointer-events:none;z-index:9999;}
+</style>
+</head>
+<body>
+<div class="watermark">Тилабаев Озодбек — 13 группа</div>
+<canvas id="confettiCanvas"></canvas>
+<div class="wrap">
+  <header>
+    <h1>Викторина: Средневековая философия</h1>
+    <p class="lead">Мини-тест с подсчётом результатов участников и просмотром правильных ответов после сдачи.</p>
+  </header>
+
+  <div class="card">
+    <div>
+      <input id="participantName" type="text" value="Тилабаев Озодбек" placeholder="Имя">
+      <input id="participantGroup" type="text" value="13 группа" placeholder="Группа">
+      <button id="startBtn">Начать/Обновить участника</button>
+      <button id="viewResultsBtn" class="secondary">Результаты всех участников</button>
+      <button id="showAnswersBtn" class="secondary" style="display:none">Показать правильные ответы</button>
+    </div>
+    <div id="quiz" class="quiz-area"></div>
+    <footer>
+      <button id="submitBtn">Отправить ответы</button>
+    </footer>
+
+    <div id="resultsPanel" style="display:none;">
+      <h3>Результаты всех участников</h3>
+      <table class="results-table" id="resultsTable">
+        <thead><tr><th>#</th><th>Имя</th><th>Группа</th><th>Баллы</th><th>Дата</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div id="answersPanel" class="answers-panel card">
+      <h3>Правильные ответы</h3>
+      <div id="answersList"></div>
+    </div>
+
+    <div id="endFun" class="end-fun" style="display:none">
+      <h2>Молодец! 🎉</h2>
+      <p>Ты прошёл викторину — пусть средневековые мыслители гордятся тобой. Нажми кнопку ниже — и произойдёт магия!</p>
+      <button id="doMagic">Сделать магию</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// Вопросы
+const QUESTIONS = [
+{q:"Кто автор «Суммы теологии»?",options:["Августин Блаженный","Фома Аквинский","Аверроэс","Ансельм"],a:1},
+{q:"«Понимание — это вера» (credo ut intelligam) принадлежит?",options:["Фома Аквинский","Августин","Ансельм","Ибн-Сина"],a:2},
+{q:"Главный центр схоластики в средние века?",options:["Бухара","Оксфорд","Пекин","Тбилиси"],a:1},
+{q:"Влияние на Фому Аквинского оказал?",options:["Аверроэс","Птолемей","Джон Локк","Платон"],a:0},
+{q:"Метод схоластики?",options:["Диалектика","Эксперимент","Манифест","Интуиция"],a:0},
+{q:"Автор «Исповеди»?",options:["Августин","Фома","Боеций","Николай"],a:0},
+{q:"Что такое универсалии?",options:["Инструменты","Общие понятия","Монахи","Рукописи"],a:1},
+{q:"Кто считал разум и веру совместимыми?",options:["Фома","Абеляр","Августин","Оккам"],a:0},
+{q:"Принцип бритвы Оккама?",options:["Многословие полезно","Не множь сущностей","Против эмпиризма","Все мистично"],a:1},
+{q:"Попытка согласовать греческую философию и исламскую теологию?",options:["Авиценнизм","Неоплатонизм","Стоицизм","Ренессанс"],a:0},
+{q:"Представитель неоплатонизма?",options:["Плотин","Декарт","Спиноза","Галилео"],a:0},
+{q:"Онтологический аргумент?",options:["Ансельм","Аристотель","Марк Аврелий","Декарт"],a:0},
+{q:"Переводчик Аристотеля в исламском мире?",options:["Аль-Фараби","Аль-Кинди","Аверроэс","Авиценна"],a:2},
+{q:"Школы при монастырях?",options:["Университеты","Шатры","Ктиторские","Scholae"],a:3},
+{q:"Схоластика это?",options:["Форма обучения","Стих","Военный строй","Праздник"],a:0},
+{q:"Скептицизм к абстрактным сущностям?",options:["Оккам","Фома","Ансельм","Августин"],a:0},
+{q:"Автор «Утешения философией»?",options:["Боеций","Августин","Фома","Ансельм"],a:0},
+{q:"Боэций известен как?",options:["Музыка и числа","Consolatio Philosophiae","Печатный станок","Сумма"],a:1},
+{q:"Теология в схоластике?",options:["Учение о Боге","Земледелие","Законы","Поэзия"],a:0},
+{q:"Вера и разум — что важнее?",options:["Диалог","Только вера","Только разум","Ни то ни другое"],a:0},
+{q:"Идея 'двух истин'?",options:["Аверроэс","Томас Мор","Джон Дэнс","Гегель"],a:0},
+{q:"Основной язык науки в Западной Европе?",options:["Латынь","Арабский","Греческий","Старофранцузский"],a:0},
+{q:"Кто ввёл бритву Оккама?",options:["Философ-францисканец","Монарх","Астроном","Поэт"],a:0}
+];
+
+let answers = new Array(QUESTIONS.length).fill(null);
+const quizEl=document.getElementById('quiz');
+const participantNameInput=document.getElementById('participantName');
+const participantGroupInput=document.getElementById('participantGroup');
+const startBtn=document.getElementById('startBtn');
+const submitBtn=document.getElementById('submitBtn');
+const viewResultsBtn=document.getElementById('viewResultsBtn');
+const resultsPanel=document.getElementById('resultsPanel');
+const resultsTableBody=document.querySelector('#resultsTable tbody');
+const showAnswersBtn=document.getElementById('showAnswersBtn');
+const answersPanel=document.getElementById('answersPanel');
+const answersList=document.getElementById('answersList');
+const endFun=document.getElementById('endFun');
+const doMagicBtn=document.getElementById('doMagic');
+
+function buildQuiz(){
+  quizEl.innerHTML='';
+  QUESTIONS.forEach((item, idx)=>{
+    const q=document.createElement('div');q.className='question';
+    q.dataset.q=idx;
+    q.innerHTML=`<div class="q-title">${idx+1}. ${item.q}</div><div class="options"></div>`;
+    const opts=q.querySelector('.options');
+    item.options.forEach((opt,i)=>{
+      const btn=document.createElement('div');
+      btn.className='option';
+      btn.dataset.opt=i;
+      btn.innerText=`${String.fromCharCode(65+i)}. ${opt}`;
+      btn.onclick=()=>selectOption(idx,i);
+      opts.appendChild(btn);
+    });
+    quizEl.appendChild(q);
+  });
+}
+function selectOption(qidx,optIdx){
+  answers[qidx]=optIdx;
+  const qDiv=quizEl.querySelector(`.question[data-q="${qidx}"]`);
+  qDiv.querySelectorAll('.option').forEach(el=>el.classList.remove('selected'));
+  qDiv.querySelector(`.option[data-opt="${optIdx}"]`).classList.add('selected');
+}
+function loadParticipants(){return JSON.parse(localStorage.getItem('participants')||'[]');}
+function saveParticipants(list){localStorage.setItem('participants',JSON.stringify(list));}
+function showResultsTable(){
+  const list=loadParticipants();
+  resultsTableBody.innerHTML='';
+  list.forEach((p,i)=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${i+1}</td><td>${p.name}</td><td>${p.group}</td><td>${p.score}/${p.total}</td><td>${p.date}</td>`;
+    resultsTableBody.appendChild(tr);
+  });
+  resultsPanel.style.display='block';
+}
+startBtn.onclick=()=>{answers=new Array(QUESTIONS.length).fill(null);quizEl.querySelectorAll('.option').forEach(el=>el.classList.remove('selected'));resultsPanel.style.display='none';answersPanel.style.display='none';endFun.style.display='none';showAnswersBtn.style.display='none';}
+submitBtn.onclick=()=>{
+  const name=participantNameInput.value||'Участник';
+  const group=participantGroupInput.value||'—';
+  let score=0, missing=[];
+  QUESTIONS.forEach((q,i)=>{if(answers[i]===null) missing.push(i+1); if(answers[i]===q.a) score++;});
+  if(missing.length>0){if(!confirm(`Вы не ответили на вопросы: ${missing.join(', ')}. Отправить всё равно?`)) return;}
+  const participants=loadParticipants();
+  participants.push({name,group,score,total:QUESTIONS.length,date:new Date().toLocaleString()});
+  saveParticipants(participants);
+  showResultsTable();
+  showAnswersBtn.style.display='inline-block';
+  answersPanel.style.display='none';
+  endFun.style.display='block';
+  confetti();
+}
+viewResultsBtn.onclick=showResultsTable;
+showAnswersBtn.onclick=()=>{
+  answersList.innerHTML='';
+  QUESTIONS.forEach((q,i)=>{
+    const div=document.createElement('div');
+    div.innerHTML=`${i+1}. ${q.q}<br><b>Правильный ответ:</b> ${String.fromCharCode(65+q.a)}. ${q.options[q.a]}`;
+    answersList.appendChild(div);
+  });
+  answersPanel.style.display='block';
+}
+doMagicBtn.onclick=confetti;
+
+function confetti(){
+  const c=document.getElementById('confettiCanvas');const ctx=c.getContext('2d');
+  c.width=window.innerWidth;c.height=window.innerHeight;
+  let confettis=[];for(let i=0;i<150;i++){confettis.push({x:Math.random()*c.width,y:Math.random()*c.height,r:Math.random()*6+4,d:Math.random()*20+10,color:`hsl(${Math.random()*360},100%,50%)`,tilt:Math.random()*10-5})}
+  let frames=0;
+  function draw(){
+    ctx.clearRect(0,0,c.width,c.height);
+    confettis.forEach(f=>{
+      ctx.fillStyle=f.color;ctx.beginPath();
+      ctx.moveTo(f.x+f.tilt,f.y);ctx.lineTo(f.x+f.tilt+f.r/2,f.y+f.r);ctx.lineTo(f.x+f.tilt-f.r/2,f.y+f.r);
+      ctx.closePath();ctx.fill();
+      f.y+=Math.sin(f.d)*1.5+2;f.x+=Math.sin(f.d)*0.5;
+      if(f.y>c.height){f.y=0;f.x=Math.random()*c.width;}
+    });
+    frames++;if(frames<200) requestAnimationFrame(draw); else ctx.clearRect(0,0,c.width,c.height);
+  }
+  draw();
+}
+buildQuiz();
+</script>
+</body>
+</html>
