@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Посещаемость — Группа 13</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: center;
+      background: linear-gradient(270deg, #ff7eb3, #65d6ce, #8ec5fc, #e0c3fc);
+      background-size: 800% 800%;
+      animation: gradientMove 15s ease infinite;
+    }
+    @keyframes gradientMove {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    h1 {
+      text-align: center;
+      color: white;
+      text-shadow: 0 0 8px rgba(0,0,0,0.6);
+      margin-bottom: 10px;
+    }
+    .student-list {
+      max-width: 650px;
+      width: 100%;
+      background: rgba(255, 255, 255, 0.95);
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.25);
+      margin-bottom: 10px;
+    }
+    .student {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px;
+      border-bottom: 1px solid #eee;
+      align-items: center;
+    }
+    .student:last-child { border-bottom: none; }
+    button {
+      margin: 8px;
+      padding: 10px 16px;
+      font-size: 15px;
+      border: none;
+      background: #4CAF50;
+      color: white;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: 0.18s;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.12);
+    }
+    button.secondary { background: #1976d2; }
+    button.ghost { background: #777; }
+    button:hover { transform: translateY(-2px); }
+    #result {
+      max-width: 650px;
+      background: white;
+      color: black;
+      padding: 18px;
+      border-radius: 12px;
+      margin-top: 12px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+      text-align: left;
+    }
+    .present { color: #009900; font-weight: 600; }
+    .absent { color: #cc0000; font-weight: 600; }
+    .motivation { margin-top: 12px; padding: 10px; font-style: italic; color: #444; text-align:center; }
+    ul.report { padding-left: 18px; margin: 10px 0; }
+    ul.report li { margin: 6px 0; }
+    .controls { text-align:center; margin-bottom: 6px; }
+  </style>
+</head>
+<body>
+  <h1>Посещаемость — Группа 13</h1>
+
+  <div class="student-list" id="list">
+    <div class="student"><span>1. Адылов Аббосбек   Санжарович</span><input type="checkbox" class="check"></div>
+    <div class="student"><span>2. Асадулоев Нурсултан Кувандикович</span><input type="checkbox" class="check"></div>
+    <div class="student"><span>3. Асанбекова Алсу Жыргалбековна</span><input type="checkbox" class="check"></div>
+    <div class="student"><span>4. Гуламова Айназир</span><input type="checkbox" class="check"></div>
+    <div class="student"><span>5. Инамова Зухрахон Дилшадовна</span><input type="checkbox" class="check"></div>
+    <div class="student"><span>6. Каимова Асема Бектурсуновна</span><input type="checkbox" class="check"></div>
+    <div class="student"><span>7. Карабаев Данияр Шермаматович</span><input type="checkbox" class="check"></div>
+    <div class="student"><span>8. Курваналиев Асодбек Улугбекович</span><input type="checkbox" class="check"></div>
+    <div class="student"><span>9. Мадаминов Хасанбой Умаржонвич</span><input type="checkbox" class="check"></div>
+    <div class="student"><span>10. Муллаева Севинчхон Махмуджоновна</span><input type="checkbox" class="check"></div>
+    <div class="student"><span>11. Омарова Элнара Шухратовна</span><input type="checkbox" class="check"></div>
+    <div class="student"><span>12. Тилабаев Озодбек Мухиддинович</span><input type="checkbox" class="check"></div>
+    <div class="student"><span>13. Тойчубоев Мухаммадзохид Махаматазизович</span><input type="checkbox" class="check"></div>
+    <div class="student"><span>14. Умарова Севинч Бактийор кизи</span><input type="checkbox" class="check"></div>
+    <div class="student"><span>15. Хакимов Акрамжон Азамжонович</span><input type="checkbox" class="check"></div>
+  </div>
+
+  <div class="controls">
+    <button onclick="showResult()">Показать результат</button>
+    <button class="secondary" onclick="downloadReport()">Скачать отчёт</button>
+    <button class="ghost" onclick="clearMarks()">Очистить отметки</button>
+    <button onclick="sendWhatsApp()">Отправить WhatsApp</button>
+    <button onclick="sendTelegram()">Отправить Telegram</button>
+    <button class="secondary" onclick="copyReport()">Копировать в буфер</button>
+  </div>
+
+  <div id="result"></div>
+
+  <script>
+    // helper: получить чекбоксы (динамически)
+    function getChecks() { return document.querySelectorAll(".check"); }
+
+    // init: загрузка сохранённых отметок и навешивание слушателей
+    window.addEventListener("load", () => {
+      const checks = getChecks();
+      checks.forEach((c, i) => {
+        const saved = localStorage.getItem("student_" + i);
+        c.checked = (saved === "true");
+        c.addEventListener("change", () => {
+          localStorage.setItem("student_" + i, c.checked);
+        });
+      });
+    });
+
+    // получить списки присутствующих/отсутствующих
+    function getPresentAbsent() {
+      const checks = getChecks();
+      const present = [], absent = [];
+      checks.forEach((c) => {
+        const name = c.parentElement.querySelector("span").innerText.trim();
+        if (c.checked) present.push(name); else absent.push(name);
+      });
+      return { present, absent };
+    }
+
+    // текст отчёта (для отправки/скачивания)
+    function generateReportText() {
+      const { present, absent } = getPresentAbsent();
+      return `📋 Отчёт по посещаемости — Группа 13
+Дата: ${new Date().toLocaleDateString()}
+
+✅ Присутствуют:
+${present.length ? present.join("\n") : "никого нет"}
+
+❌ Отсутствуют:
+${absent.length ? absent.join("\n") : "все на месте"}
+`;
+    }
+
+    // показать результат в карточке (без парсинга строк)
+    function showResult() {
+      const { present, absent } = getPresentAbsent();
+      let html = "<h2>Результат:</h2><ul class='report'>";
+      present.forEach(n => html += `<li class="present">✅ ${n}</li>`);
+      absent.forEach(n => html += `<li class="absent">❌ ${n}</li>`);
+      html += "</ul>";
+      const phrases = [
+        "🚀 Группа 13 всегда на высоте!",
+        "🔥 Молодцы, держим темп!",
+        "😎 Никто нас не остановит!",
+        "✨ Сегодня отличный день для новых побед!",
+        "💪 Группа 13 — сила!"
+      ];
+      html += `<div class="motivation">${phrases[Math.floor(Math.random() * phrases.length)]}</div>`;
+      document.getElementById("result").innerHTML = html;
+    }
+
+    // скачать отчёт (файл с датой)
+    function downloadReport() {
+      const text = generateReportText();
+      const filename = `otchet_gr13_${new Date().toISOString().slice(0,10)}.txt`;
+      const blob = new Blob([text], { type: "text/plain" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }
+
+    // очистить отметки
+    function clearMarks() {
+      const checks = getChecks();
+      checks.forEach((c, i) => {
+        c.checked = false;
+        localStorage.removeItem("student_" + i);
+      });
+      document.getElementById("result").innerHTML = "";
+    }
+
+    // копирование в буфер (резервный вариант если отправка не сработала)
+    async function copyReport() {
+      const text = generateReportText();
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        try {
+          await navigator.clipboard.writeText(text);
+          alert("Текст отчёта скопирован в буфер обмена. Вставьте в WhatsApp/Telegram.");
+          return;
+        } catch(e) { /* fallback далее */ }
+      }
+      // fallback for older browsers
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      ta.remove();
+      alert("Текст скопирован (fallback). Вставьте в сообщение.");
+    }
+
+    // Отправка в WhatsApp (Web Share API -> wa.me -> api.whatsapp.com)
+    async function sendWhatsApp() {
+      const text = generateReportText();
+      // If Web Share API available (mobile)
+      if (navigator.share) {
+        try {
+          await navigator.share({ text });
+          return;
+        } catch (err) { /* continue to open link */ }
+      }
+      const encoded = encodeURIComponent(text);
+      const url1 = `https://wa.me/?text=${encoded}`;
+      const url2 = `https://api.whatsapp.com/send?text=${encoded}`;
+      let opened = window.open(url1, "_blank");
+      if (!opened) {
+        // fallback to api.whatsapp
+        const a = document.createElement("a");
+        a.href = url2;
+        a.target = "_blank";
+        a.rel = "noopener";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      }
+    }
+
+    // Отправка в Telegram (Web Share API -> t.me/share/url)
+    function sendTelegram() {
+      const text = generateReportText();
+      if (navigator.share) {
+        try { navigator.share({ text }); return; } catch(e) { /* continue */ }
+      }
+      const encoded = encodeURIComponent(text);
+      const url = `https://t.me/share/url?url=&text=${encoded}`;
+      let opened = window.open(url, "_blank");
+      if (!opened) {
+        const a = document.createElement("a");
+        a.href = url;
+        a.target = "_blank";
+        a.rel = "noopener";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      }
+    }
+  </script>
+</body>
+</html>
